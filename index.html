@@ -3,140 +3,408 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>南河市場 シフト確認</title>
+  <title>南河市場 スタッフページ</title>
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
-    body {
-      font-family:'Helvetica Neue',Arial,sans-serif;
-      background:#f4f6f9;
-      padding:16px;
-      min-height:100vh;
-    }
-    .header {
-      background:linear-gradient(135deg,#20c997,#0ea5e9);
-      color:white;
-      padding:18px 16px;
-      border-radius:14px;
-      text-align:center;
-      margin-bottom:16px;
-    }
-    .header h2 { font-size:16px; margin:0; }
-    .header small { opacity:.8; font-size:12px; }
+    body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f4f6f9; }
 
-    .day-card {
-      background:white;
-      border-radius:12px;
-      box-shadow:0 2px 8px rgba(0,0,0,.06);
-      margin-bottom:10px;
-      overflow:hidden;
-    }
-    .day-hd {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:8px 14px;
-      background:linear-gradient(135deg,#f0fdf4,#ecfdf5);
-      border-bottom:1px solid #d1fae5;
-    }
-    .day-title { font-weight:700; font-size:13px; color:#065f46; }
-    .day-date  { font-size:11px; color:#64748b; }
-    .shift-info { padding:10px 14px; font-size:13px; color:#374151; }
-    .shift-time { font-weight:700; color:#0ea5e9; }
-    .shift-off  { color:#9ca3af; }
+    .header-box { background:linear-gradient(135deg,#20c997,#0ea5e9); color:white; padding:18px 16px; text-align:center; }
+    .header-box h3 { margin:0; font-size:1.1rem; }
+    .header-box small { opacity:.8; font-size:.8rem; }
 
-    .loading {
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      height:200px;
-      gap:12px;
-      color:#94a3b8;
-    }
-    .spinner {
-      width:32px; height:32px;
-      border:3px solid #e2e8f0;
-      border-top-color:#0ea5e9;
-      border-radius:50%;
-      animation:spin .8s linear infinite;
-    }
+    .tab-bar { display:flex; background:white; border-bottom:2px solid #e2e8f0; position:sticky; top:0; z-index:50; overflow-x:auto; white-space:nowrap; }
+    .tab-btn { flex:0 0 auto; padding:11px 14px; font-size:12px; font-weight:600; color:#94a3b8; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .2s; }
+    .tab-btn.active { color:#0ea5e9; border-bottom-color:#0ea5e9; }
+
+    .tab-panel { display:none; padding:14px; }
+    .tab-panel.active { display:block; }
+
+    .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; gap:10px; color:#94a3b8; }
+    .spinner { width:32px; height:32px; border:3px solid #e2e8f0; border-top-color:#0ea5e9; border-radius:50%; animation:spin .8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
 
-    .error {
-      text-align:center;
-      padding:20px;
-      color:#ef4444;
-      background:#fef2f2;
-      border-radius:8px;
-      margin-top:20px;
-    }
+    /* タブ1 */
+    .week-badge { text-align:center; font-size:12px; color:#64748b; background:#f1f5f9; border-radius:8px; padding:6px 12px; margin-bottom:12px; }
+    .day-card { background:white; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:10px; overflow:hidden; }
+    .day-card-hd { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; background:linear-gradient(135deg,#f0fdf4,#ecfdf5); border-bottom:1px solid #d1fae5; }
+    .day-card-hd .d-title { font-weight:700; font-size:13px; color:#065f46; }
+    .day-card-hd .d-count { font-size:11px; color:#059669; background:#d1fae5; padding:2px 8px; border-radius:20px; }
+    .sr { display:flex; align-items:center; padding:7px 12px; gap:8px; border-bottom:1px solid #f1f5f9; }
+    .sr:last-child { border-bottom:none; }
+    .sr.is-off { opacity:.4; }
+    .sr.is-me { background:#eff6ff; }
+    .sr.is-me .sr-name { color:#1d4ed8; font-weight:700; }
+    .sr-name { font-size:12px; font-weight:500; color:#374151; min-width:64px; max-width:64px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sr-bar { flex:1; position:relative; height:24px; }
+    .sr-bar-bg { position:absolute; inset:0; background:#f8fafc; border-radius:4px; border:1px solid #e2e8f0; }
+    .sr-bar-fill { position:absolute; top:0; bottom:0; background:linear-gradient(90deg,rgba(16,185,129,.25),rgba(52,211,153,.15)); border-left:3px solid #10b981; border-radius:0 3px 3px 0; }
+    .sr-times { font-size:11px; white-space:nowrap; min-width:76px; text-align:right; }
+    .sr-times .t-in { color:#059669; font-weight:700; }
+    .sr-times .t-sep { color:#cbd5e1; margin:0 2px; }
+    .sr-times .t-out { color:#94a3b8; }
+    .sr-off-label { flex:1; font-size:11px; color:#cbd5e1; text-align:center; }
+
+    /* タブ2 */
+    .card-shift { border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,.05); background:white; margin-bottom:15px; overflow:hidden; }
+    .day-row { display:flex; align-items:center; justify-content:space-between; padding:12px 15px; border-bottom:1px solid #edf2f7; }
+    .day-row:last-child { border-bottom:none; }
+    .day-label { font-weight:bold; color:#4a5568; font-size:1rem; }
+    .badge-date { font-size:.8rem; background:#e2e8f0; color:#4a5568; padding:3px 8px; border-radius:20px; margin-left:8px; }
+    .select-box { width:60%; max-width:220px; border-radius:10px; border:1px solid #cbd5e1; padding:7px; font-size:.9rem; }
+    .btn-save { background:linear-gradient(135deg,#0ea5e9,#2563eb); color:white; border:none; width:100%; padding:13px; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; }
+    .btn-save:disabled { opacity:.6; cursor:not-allowed; }
+
+    /* タブ3 */
+    .req-row { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:10px; overflow:hidden; }
+    .req-row-hd { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:#fffbeb; border-bottom:1px solid #fde68a; }
+    .req-day { font-weight:700; font-size:14px; color:#92400e; }
+    .req-date { font-size:12px; color:#b45309; }
+    .req-body { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; }
+    .req-shift { font-size:13px; color:#374151; }
+    .req-shift .t { font-weight:700; color:#0ea5e9; }
+    .req-shift .off { color:#9ca3af; }
+    .btn-request { font-size:12px; font-weight:600; background:white; color:#ef4444; border:1px solid #ef4444; border-radius:8px; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+    .btn-request:disabled { opacity:.4; cursor:not-allowed; }
+    .badge-applied { font-size:11px; background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:4px 10px; border-radius:20px; }
+
+    /* モーダル */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+    .modal-box { background:white; border-radius:16px; padding:24px; max-width:360px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+    .modal-box h5 { font-weight:700; color:#1e293b; margin-bottom:8px; font-size:16px; }
+    .modal-box p { font-size:14px; color:#475569; margin-bottom:16px; white-space:pre-wrap; }
+    .modal-btns { display:flex; gap:10px; }
+    .btn-cancel { flex:1; padding:11px; border-radius:10px; border:1px solid #e2e8f0; background:white; color:#64748b; font-weight:600; cursor:pointer; }
+    .btn-ok { flex:1; padding:11px; border-radius:10px; border:none; background:#ef4444; color:white; font-weight:600; cursor:pointer; }
+    .btn-ok-green { flex:1; padding:11px; border-radius:10px; border:none; background:#22c55e; color:white; font-weight:600; cursor:pointer; width:100%; margin-top:4px; }
+
+    .error-msg { color:#ef4444; text-align:center; padding:20px; background:#fef2f2; border-radius:8px; margin:14px; }
   </style>
 </head>
 <body>
 
-<div id="root">
-  <div class="loading">
+  <div id="loading-init" class="loading-wrap" style="height:100vh;">
     <div class="spinner"></div>
-    <div>シフトを読み込み中...</div>
+    <div>データを読み込み中...</div>
   </div>
-</div>
+
+  <div id="app" style="display:none;">
+    <div class="header-box">
+      <h3 id="staff-name">スタッフマイページ</h3>
+      <small>シフトの確認・提出・変更申請</small>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('weekly',this)">📅 今週のシフト</button>
+      <button class="tab-btn"        onclick="switchTab('submit',this)">📝 次週シフト提出</button>
+      <button class="tab-btn"        onclick="switchTab('request',this)">🔄 予定変更申請</button>
+    </div>
+
+    <div class="tab-panel active" id="panel-weekly">
+      <div class="week-badge" id="week-badge-label">読み込み中...</div>
+      <div id="weekly-content">
+        <div class="loading-wrap"><div class="spinner"></div><div>読み込み中...</div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-submit">
+      <div class="card-shift"><div id="shift-rows-container"></div></div>
+      <button class="btn-save mt-2" onclick="saveShift()" id="save-btn" style="margin-top:8px;">⚙️ この内容で変更して保存する</button>
+    </div>
+
+    <div class="tab-panel" id="panel-request">
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;background:#fff7ed;border-radius:8px;padding:10px 14px;border:1px solid #fed7aa;">
+        ⚠️ 急な予定変更がある場合は「変更を申請する」を押してください。管理者に通知されます。
+      </div>
+      <div id="request-content">
+        <div class="loading-wrap"><div class="spinner"></div><div>読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 確認ダイアログ -->
+  <div class="modal-overlay" id="confirm-overlay" style="display:none;">
+    <div class="modal-box">
+      <h5>📋 変更を申請しますか？</h5>
+      <p id="confirm-msg"></p>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeConfirm()">キャンセル</button>
+        <button class="btn-ok" id="btn-do-request">申請する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完了モーダル -->
+  <div class="modal-overlay" id="success-overlay" style="display:none;">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <h5 style="color:#15803d;">送信しました！</h5>
+      <p>管理者に通知されました。<br>交代要員が見つかり次第、LINEでお知らせします。</p>
+      <button class="btn-ok-green" onclick="document.getElementById('success-overlay').style.display='none'">閉じる</button>
+    </div>
+  </div>
 
 <script>
-(function() {
   // ★ GASのWebアプリURLに変更してください
   var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwoYeybAukdTe6d1_Dre45LBpGFOkOfgDThvdxyYfKbV9-WQJ0IwP96wqHHybEK53Hu/exec';
 
-  var root = document.getElementById('root');
+  var params   = new URLSearchParams(window.location.search);
+  var userId   = params.get('userId') || '';
 
-  // URLパラメータからuserIdを取得
-  var params = new URLSearchParams(window.location.search);
-  var userId = params.get('userId') || '';
+  var DAYS        = ['火曜','水曜','木曜','金曜','土曜','日曜'];
+  var GANTT_START = 8 * 60;
+  var SLOT_MIN    = 30;
+  var TOTAL_H     = 12;
 
-  if (!userId) {
-    root.innerHTML = '<div class="error">スタッフコードが見つかりません。<br>LINEのメニューから開いてください。</div>';
-    return;
+  var myName            = '';
+  var myWeekShifts      = [];
+  var staffData         = null;
+  var weeklyLoaded      = false;
+  var requestLoaded     = false;
+  var pendingReqPayload = null;
+
+  function apiCall(action, extraParams) {
+    var url = WEB_APP_URL + '?page=api&action=' + action + '&userId=' + encodeURIComponent(userId);
+    if (extraParams) {
+      Object.keys(extraParams).forEach(function(k) {
+        url += '&' + k + '=' + encodeURIComponent(extraParams[k]);
+      });
+    }
+    return fetch(url).then(function(r) { return r.json(); });
   }
 
-  // GAS APIを呼んで今週のシフトを取得
-  fetch(WEB_APP_URL + '?page=api&action=getWeekShift&userId=' + encodeURIComponent(userId))
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (!data || !data.registered) {
-        root.innerHTML = '<div class="error">スタッフ情報が見つかりません。</div>';
-        return;
-      }
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'weekly'  && !weeklyLoaded)  loadWeekly();
+    if (name === 'request' && !requestLoaded) loadRequest();
+  }
 
-      var html = '<div class="header">'
-        + '<h2>' + data.name + ' さん</h2>'
-        + '<small>今週のシフト一覧</small>'
-        + '</div>';
+  window.onload = function() {
+    if (!userId) {
+      document.getElementById('loading-init').style.display = 'none';
+      document.body.innerHTML = '<div class="error-msg">スタッフコードが見つかりません。<br>LINEのメニューから開いてください。</div>';
+      return;
+    }
 
-      data.shifts.forEach(function(s) {
-        var hasShift = s.inTime && s.inTime !== '';
-        html += '<div class="day-card">'
-          + '<div class="day-hd">'
-          + '<span class="day-title">' + s.day + '</span>'
-          + '<span class="day-date">' + s.date + '</span>'
-          + '</div>'
-          + '<div class="shift-info">';
+    apiCall('getStaff')
+      .then(function(data) {
+        document.getElementById('loading-init').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
 
-        if (hasShift) {
-          html += '出勤：<span class="shift-time">' + s.inTime + ' 〜 ' + s.outTime + '</span>';
-        } else {
-          html += '<span class="shift-off">シフトなし（休み）</span>';
+        if (!data.registered) {
+          document.getElementById('staff-name').textContent = '⚠️ 認証エラー';
+          return;
         }
-
-        html += '</div></div>';
+        staffData = data;
+        myName    = data.name;
+        document.getElementById('staff-name').textContent = data.name + ' さん';
+        buildSubmitRows(data);
+        loadWeekly();
+      })
+      .catch(function() {
+        document.getElementById('loading-init').innerHTML = '<div class="error-msg">読み込みエラーが発生しました。</div>';
       });
+  };
 
-      root.innerHTML = html;
-    })
-    .catch(function(err) {
-      root.innerHTML = '<div class="error">読み込みエラーが発生しました。<br>しばらく待ってから再度お試しください。</div>';
+  /* ── タブ2: シフト提出 ── */
+  function buildSubmitRows(data) {
+    var container = document.getElementById('shift-rows-container');
+    container.innerHTML = '';
+    DAYS.forEach(function(day) {
+      var row = document.createElement('div');
+      row.className = 'day-row';
+      var labelDiv = document.createElement('div');
+      labelDiv.innerHTML = '<span class="day-label">' + day + '</span><span class="badge-date">' + (data.dates[day] || '') + '</span>';
+      row.appendChild(labelDiv);
+      var sel = document.createElement('select');
+      sel.className = 'select-box';
+      sel.id = 'sel-' + day;
+      data.choices.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        if (c === data.shifts[day]) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      row.appendChild(sel);
+      container.appendChild(row);
     });
-})();
-  
-</script>
+  }
 
+  function saveShift() {
+    var btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.textContent = '⏳ 保存中...';
+    var shifts = {};
+    DAYS.forEach(function(day) {
+      var el = document.getElementById('sel-' + day);
+      shifts[day] = el ? el.value : '';
+    });
+    apiCall('saveShift', { shifts: JSON.stringify(shifts) })
+      .then(function(res) {
+        btn.disabled = false; btn.textContent = '⚙️ この内容で変更して保存する';
+        if (res.success) {
+          alert('✨ シフトの更新が完了しました！');
+          weeklyLoaded = false; requestLoaded = false;
+        } else {
+          alert('エラーが発生しました');
+        }
+      })
+      .catch(function() {
+        btn.disabled = false; btn.textContent = '⚙️ この内容で変更して保存する';
+        alert('通信エラーが発生しました');
+      });
+  }
+
+  /* ── タブ1: 週間シフト一覧 ── */
+  function loadWeekly() {
+    weeklyLoaded = true;
+    apiCall('getMonitoring')
+      .then(renderWeekly)
+      .catch(function() {
+        document.getElementById('weekly-content').innerHTML = '<div class="error-msg">読み込みエラー</div>';
+      });
+  }
+
+  function renderWeekly(data) {
+    if (!data || !data.gantt) return;
+    document.getElementById('week-badge-label').textContent = '📆 ' + (data.weekLabel || '今週のシフト');
+    var staffNames = (data.staff || []).map(function(s) { return s.name; });
+    var el = document.getElementById('weekly-content');
+    el.innerHTML = '';
+    DAYS.forEach(function(day) {
+      var rows = data.gantt[day] || [];
+      var shiftMap = {};
+      rows.forEach(function(r) { shiftMap[r.name] = slotsToShift(r.slots); });
+      var workCount = staffNames.filter(function(n) { return shiftMap[n]; }).length;
+      var card = document.createElement('div'); card.className = 'day-card';
+      card.innerHTML = '<div class="day-card-hd"><span class="d-title">' + day + '</span><span class="d-count">出勤 ' + workCount + '名</span></div>';
+      staffNames.forEach(function(name) {
+        var shift = shiftMap[name];
+        var isMe  = name === myName;
+        var row   = document.createElement('div');
+        row.className = 'sr' + (!shift ? ' is-off' : '') + (isMe ? ' is-me' : '');
+        var nameEl = document.createElement('div'); nameEl.className = 'sr-name'; nameEl.title = name; nameEl.textContent = name;
+        row.appendChild(nameEl);
+        if (shift) {
+          var bw = document.createElement('div'); bw.className = 'sr-bar';
+          var bg = document.createElement('div'); bg.className = 'sr-bar-bg'; bw.appendChild(bg);
+          var lp = ((shift.inMin - GANTT_START) / (TOTAL_H * 60)) * 100;
+          var wp = ((shift.outMin - shift.inMin) / (TOTAL_H * 60)) * 100;
+          var fill = document.createElement('div'); fill.className = 'sr-bar-fill';
+          fill.style.left = Math.max(0,lp) + '%'; fill.style.width = Math.max(2,wp) + '%';
+          bw.appendChild(fill); row.appendChild(bw);
+          var times = document.createElement('div'); times.className = 'sr-times';
+          times.innerHTML = '<span class="t-in">' + minToTime(shift.inMin) + '</span><span class="t-sep">→</span><span class="t-out">' + minToTime(shift.outMin) + '</span>';
+          row.appendChild(times);
+        } else {
+          var off = document.createElement('div'); off.className = 'sr-off-label'; off.textContent = '休み';
+          row.appendChild(off);
+        }
+        card.appendChild(row);
+      });
+      el.appendChild(card);
+    });
+  }
+
+  /* ── タブ3: 予定変更申請 ── */
+  function loadRequest() {
+    requestLoaded = true;
+    apiCall('getWeekShift')
+      .then(renderRequest)
+      .catch(function() {
+        document.getElementById('request-content').innerHTML = '<div class="error-msg">読み込みエラー</div>';
+      });
+  }
+
+  function renderRequest(data) {
+    var el = document.getElementById('request-content');
+    if (!data || !data.registered) {
+      el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;">シフトデータが取得できません</div>';
+      return;
+    }
+    myWeekShifts = data.shifts;
+    el.innerHTML = '';
+    data.shifts.forEach(function(s, idx) {
+      var hasShift = s.inTime && s.inTime !== '';
+      var row = document.createElement('div'); row.className = 'req-row';
+      row.innerHTML =
+        '<div class="req-row-hd">'
+        + '<div><span class="req-day">' + s.day + '</span><span class="req-date" style="margin-left:8px;">' + s.date + '</span></div>'
+        + '<div id="req-status-' + idx + '"></div>'
+        + '</div>'
+        + '<div class="req-body">'
+        + '<div class="req-shift">'
+        + (hasShift ? '確定シフト：<span class="t">' + s.inTime + ' 〜 ' + s.outTime + '</span>' : '<span class="off">シフトなし（休み）</span>')
+        + '</div>'
+        + (hasShift ? '<button class="btn-request" id="btn-req-' + idx + '" onclick="confirmRequest(' + idx + ')">変更を申請する</button>' : '<span style="font-size:11px;color:#cbd5e1;">対象外</span>')
+        + '</div>';
+      el.appendChild(row);
+    });
+  }
+
+  function confirmRequest(idx) {
+    var s = myWeekShifts[idx];
+    if (!s) return;
+    pendingReqPayload = { name: myName, day: s.day, date: s.date, inTime: s.inTime, outTime: s.outTime, idx: idx };
+    document.getElementById('confirm-msg').textContent =
+      s.date + '（' + s.day + '）\nシフト：' + s.inTime + ' 〜 ' + s.outTime + '\n\nこの日の変更を申請しますか？';
+    document.getElementById('confirm-overlay').style.display = 'flex';
+    document.getElementById('btn-do-request').onclick = doRequest;
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirm-overlay').style.display = 'none';
+    pendingReqPayload = null;
+  }
+
+  function doRequest() {
+    var payload = pendingReqPayload;
+    closeConfirm();
+    if (!payload) return;
+
+    var idx = payload.idx;
+    var btn = document.getElementById('btn-req-' + idx);
+    if (btn) { btn.disabled = true; btn.textContent = '送信中...'; }
+
+    apiCall('submitRequest', {
+      reqData: JSON.stringify({
+        name:    payload.name,
+        day:     payload.day,
+        date:    payload.date,
+        inTime:  payload.inTime,
+        outTime: payload.outTime
+      })
+    })
+    .then(function(res) {
+      if (res && res.success) {
+        if (btn) btn.style.display = 'none';
+        var st = document.getElementById('req-status-' + idx);
+        if (st) st.innerHTML = '<span class="badge-applied">申請済み</span>';
+        document.getElementById('success-overlay').style.display = 'flex';
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = '変更を申請する'; }
+        alert('エラーが発生しました');
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '変更を申請する'; }
+      alert('通信エラーが発生しました');
+    });
+  }
+
+  function slotsToShift(slots) {
+    var first = -1, last = -1;
+    slots.forEach(function(v, i) {
+      if (v === 'work' || v === 'brk') { if (first === -1) first = i; last = i; }
+    });
+    if (first === -1) return null;
+    return { inMin: GANTT_START + first * SLOT_MIN, outMin: GANTT_START + (last + 1) * SLOT_MIN };
+  }
+
+  function minToTime(m) {
+    return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  }
+</script>
 </body>
 </html>
