@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>南河市場 シフト確認</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'Helvetica Neue',Arial,sans-serif;
+      background:#f4f6f9;
+      padding:16px;
+      min-height:100vh;
+    }
+    .header {
+      background:linear-gradient(135deg,#20c997,#0ea5e9);
+      color:white;
+      padding:18px 16px;
+      border-radius:14px;
+      text-align:center;
+      margin-bottom:16px;
+    }
+    .header h2 { font-size:16px; margin:0; }
+    .header small { opacity:.8; font-size:12px; }
+
+    .day-card {
+      background:white;
+      border-radius:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+      margin-bottom:10px;
+      overflow:hidden;
+    }
+    .day-hd {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:8px 14px;
+      background:linear-gradient(135deg,#f0fdf4,#ecfdf5);
+      border-bottom:1px solid #d1fae5;
+    }
+    .day-title { font-weight:700; font-size:13px; color:#065f46; }
+    .day-date  { font-size:11px; color:#64748b; }
+    .shift-info { padding:10px 14px; font-size:13px; color:#374151; }
+    .shift-time { font-weight:700; color:#0ea5e9; }
+    .shift-off  { color:#9ca3af; }
+
+    .loading {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:200px;
+      gap:12px;
+      color:#94a3b8;
+    }
+    .spinner {
+      width:32px; height:32px;
+      border:3px solid #e2e8f0;
+      border-top-color:#0ea5e9;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .error {
+      text-align:center;
+      padding:20px;
+      color:#ef4444;
+      background:#fef2f2;
+      border-radius:8px;
+      margin-top:20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>シフトを読み込み中...</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ★ GASのWebアプリURLに変更してください
+  var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwoYeybAukdTe6d1_Dre45LBpGFOkOfgDThvdxyYfKbV9-WQJ0IwP96wqHHybEK53Hu/exec';
+
+  var root = document.getElementById('root');
+
+  // URLパラメータからuserIdを取得
+  var params = new URLSearchParams(window.location.search);
+  var userId = params.get('userId') || '';
+
+  if (!userId) {
+    root.innerHTML = '<div class="error">スタッフコードが見つかりません。<br>LINEのメニューから開いてください。</div>';
+    return;
+  }
+
+  // GAS APIを呼んで今週のシフトを取得
+  fetch(WEB_APP_URL + '?page=api&action=getWeekShift&userId=' + encodeURIComponent(userId))
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data || !data.registered) {
+        root.innerHTML = '<div class="error">スタッフ情報が見つかりません。</div>';
+        return;
+      }
+
+      var html = '<div class="header">'
+        + '<h2>' + data.name + ' さん</h2>'
+        + '<small>今週のシフト一覧</small>'
+        + '</div>';
+
+      data.shifts.forEach(function(s) {
+        var hasShift = s.inTime && s.inTime !== '';
+        html += '<div class="day-card">'
+          + '<div class="day-hd">'
+          + '<span class="day-title">' + s.day + '</span>'
+          + '<span class="day-date">' + s.date + '</span>'
+          + '</div>'
+          + '<div class="shift-info">';
+
+        if (hasShift) {
+          html += '出勤：<span class="shift-time">' + s.inTime + ' 〜 ' + s.outTime + '</span>';
+        } else {
+          html += '<span class="shift-off">シフトなし（休み）</span>';
+        }
+
+        html += '</div></div>';
+      });
+
+      root.innerHTML = html;
+    })
+    .catch(function(err) {
+      root.innerHTML = '<div class="error">読み込みエラーが発生しました。<br>しばらく待ってから再度お試しください。</div>';
+    });
+})();
+</script>
+
+</body>
+</html>
