@@ -149,6 +149,7 @@
 
   var params   = new URLSearchParams(window.location.search);
   var userId   = params.get('userId') || '';
+  var tabParam = params.get('tab') || 'weekly';  
 
   var DAYS        = ['火曜','水曜','木曜','金曜','土曜','日曜'];
   var GANTT_START = 8 * 60;
@@ -201,7 +202,15 @@
         myName    = data.name;
         document.getElementById('staff-name').textContent = data.name + ' さん';
         buildSubmitRows(data);
-        loadWeekly();
+         if (tabParam !== 'weekly') {
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabParam)) {
+          btn.click();
+        }
+      });
+    } else {
+      loadWeekly();
+    }
       })
       .catch(function() {
         document.getElementById('loading-init').innerHTML = '<div class="error-msg">読み込みエラーが発生しました。</div>';
